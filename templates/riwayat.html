@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Riwayat Absensi</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <nav class="bg-blue-700 text-white px-6 py-4 shadow-md flex justify-between items-center">
+    <div class="flex items-center gap-3">
+      <span class="text-2xl">🖐</span>
+      <span class="font-bold text-lg">Absensi Sidik Jari — Kelas 11 PPLG</span>
+    </div>
+    <div class="flex gap-4">
+      <a href="/" class="hover:bg-blue-600 px-4 py-1.5 rounded-lg text-sm">Absen</a>
+      <a href="/riwayat" class="bg-white text-blue-700 font-semibold px-4 py-1.5 rounded-lg text-sm">Riwayat</a>
+    </div>
+  </nav>
+
+  <div class="max-w-4xl mx-auto mt-10 px-4">
+
+    <div class="bg-white rounded-2xl shadow p-6 mb-6">
+      <div class="flex justify-between items-center mb-5">
+        <div>
+          <h2 class="text-xl font-bold text-gray-800">Riwayat Absensi</h2>
+          <p class="text-gray-400 text-sm">Data kehadiran siswa Kelas 11 PPLG</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="filterHariIni()" id="btnHariIni"
+            class="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg font-medium">
+            Hari Ini
+          </button>
+          <button onclick="filterSemua()" id="btnSemua"
+            class="border border-gray-300 text-gray-600 text-sm px-4 py-2 rounded-lg font-medium hover:bg-gray-50">
+            Semua
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid grid-cols-3 gap-4 mb-6">
+        <div class="bg-blue-50 rounded-xl p-4 text-center">
+          <p id="statTotal" class="text-3xl font-bold text-blue-600">0</p>
+          <p class="text-xs text-gray-500 mt-1">Total Hadir</p>
+        </div>
+        <div class="bg-green-50 rounded-xl p-4 text-center">
+          <p id="statLaki" class="text-3xl font-bold text-green-600">0</p>
+          <p class="text-xs text-gray-500 mt-1">Laki-laki</p>
+        </div>
+        <div class="bg-pink-50 rounded-xl p-4 text-center">
+          <p id="statPerem" class="text-3xl font-bold text-pink-500">0</p>
+          <p class="text-xs text-gray-500 mt-1">Perempuan</p>
+        </div>
+      </div>
+
+      <!-- Tabel -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-gray-50 text-gray-500 text-xs uppercase">
+              <th class="px-4 py-3 text-left rounded-l-lg">No</th>
+              <th class="px-4 py-3 text-left">Nama</th>
+              <th class="px-4 py-3 text-left">NIS</th>
+              <th class="px-4 py-3 text-left">JK</th>
+              <th class="px-4 py-3 text-left">Pola</th>
+              <th class="px-4 py-3 text-left">Tangan</th>
+              <th class="px-4 py-3 text-left">Tanggal</th>
+              <th class="px-4 py-3 text-left rounded-r-lg">Waktu</th>
+            </tr>
+          </thead>
+          <tbody id="tabelBody">
+            <tr>
+              <td colspan="8" class="text-center text-gray-400 py-10">Memuat data...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let allData = [];
+    let modeHariIni = true;
+
+    async function loadData() {
+      const res = await fetch('/api/semua-absensi');
+      allData = await res.json();
+      filterHariIni();
+    }
+
+    function filterHariIni() {
+      modeHariIni = true;
+      document.getElementById('btnHariIni').className = 'bg-blue-600 text-white text-sm px-4 py-2 rounded-lg font-medium';
+      document.getElementById('btnSemua').className = 'border border-gray-300 text-gray-600 text-sm px-4 py-2 rounded-lg font-medium hover:bg-gray-50';
+      const today = new Date().toISOString().split('T')[0];
+      renderTabel(allData.filter(r => r.tanggal === today));
+    }
+
+    function filterSemua() {
+      modeHariIni = false;
+      document.getElementById('btnSemua').className = 'bg-blue-600 text-white text-sm px-4 py-2 rounded-lg font-medium';
+      document.getElementById('btnHariIni').className = 'border border-gray-300 text-gray-600 text-sm px-4 py-2 rounded-lg font-medium hover:bg-gray-50';
+      renderTabel(allData);
+    }
+
+    function renderTabel(data) {
+      document.getElementById('statTotal').textContent = data.length;
+      document.getElementById('statLaki').textContent = data.filter(r => r.jk === 'L').length;
+      document.getElementById('statPerem').textContent = data.filter(r => r.jk === 'P').length;
+
+      const tbody = document.getElementById('tabelBody');
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-gray-400 py-10">Belum ada data absensi</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.map((r, i) => `
+        <tr class="border-t border-gray-100 hover:bg-gray-50">
+          <td class="px-4 py-3 text-gray-400">${i + 1}</td>
+          <td class="px-4 py-3 font-medium text-gray-800">${r.nama}</td>
+          <td class="px-4 py-3 text-gray-500">${r.nis}</td>
+          <td class="px-4 py-3">
+            <span class="px-2 py-1 rounded-full text-xs font-medium ${r.jk === 'L' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}">
+              ${r.jk === 'L' ? 'Laki-laki' : 'Perempuan'}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-gray-600">${r.pola}</td>
+          <td class="px-4 py-3 text-gray-600">${r.tangan}</td>
+          <td class="px-4 py-3 text-gray-500">${r.tanggal}</td>
+          <td class="px-4 py-3 text-gray-500">${r.waktu}</td>
+        </tr>
+      `).join('');
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
